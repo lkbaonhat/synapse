@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# .husky/commit-msg
+# Runs commitlint on every commit message to enforce Conventional Commits format.
+# Installed automatically by `pnpm prepare`.
+. "$(dirname -- "$0")/_/husky.sh"
+
+pnpm commitlint --edit "$1"

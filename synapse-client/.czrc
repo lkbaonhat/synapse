@@ -1,0 +1,16 @@
+{
+  "path": "cz-conventional-changelog",
+  "types": {
+    "feat":     { "description": "✨  A new feature",                               "title": "Features" },
+    "fix":      { "description": "🐛  A bug fix",                                   "title": "Bug Fixes" },
+    "docs":     { "description": "📝  Documentation only changes",                  "title": "Documentation" },
+    "style":    { "description": "💅  Formatting, missing semicolons — no logic",   "title": "Styles" },
+    "refactor": { "description": "♻️   A code change that is neither a fix nor feat", "title": "Refactors" },
+    "perf":     { "description": "⚡  A code change that improves performance",     "title": "Performance" },
+    "test":     { "description": "✅  Adding or fixing tests",                      "title": "Tests" },
+    "build":    { "description": "🏗   Build system or external dependency changes", "title": "Build" },
+    "ci":       { "description": "🤖  CI/CD config changes",                        "title": "CI" },
+    "chore":    { "description": "🔧  Other tooling, config, or scripts",           "title": "Chores" },
+    "revert":   { "description": "⏪  Revert a previous commit",                   "title": "Reverts" }
+  }
+}
