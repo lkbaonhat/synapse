@@ -40,8 +40,8 @@
     <!-- Deck Breakdown -->
     <div class="section">
       <h2 class="section-title">Deck Progress</h2>
-      <div v-if="deckStore.decks.length > 0" class="deck-breakdown">
-        <div v-for="deck in deckStore.decks" :key="deck.id" class="deck-progress-row">
+    <div v-if="decks && decks.length > 0" class="deck-breakdown">
+        <div v-for="deck in decks" :key="deck.id" class="deck-progress-row">
           <div class="deck-info">
             <span class="deck-progress-name">{{ deck.name }}</span>
             <span class="deck-progress-count">{{ getCardsByDeck(deck.id).length }} cards</span>
@@ -87,34 +87,36 @@
 </template>
 
 <script setup lang="ts">
+// §5 — Import order: vue → router → composables → components → types
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import { useDeckStore } from '@/store/useDeckStore'
-import { useCardStore } from '@/store/useCardStore'
+import { useDecks } from '@/composables/useDecks'
+import { useAllCards } from '@/composables/useCards'
 
-const deckStore = useDeckStore()
-const cardStore = useCardStore()
+// §7 — No stores here; all data from Vue Query composables
+const { data: decks } = useDecks()
+const { data: allCards } = useAllCards()
 
-const totalDecks = computed(() => deckStore.decks.length)
-const totalCards = computed(() => cardStore.cards.length)
+const totalDecks = computed(() => decks.value?.length ?? 0)
+const totalCards = computed(() => allCards.value?.length ?? 0)
 
 const dueToday = computed(() => {
   const now = new Date()
-  return cardStore.cards.filter(c => new Date(c.nextReviewDate) <= now).length
+  return (allCards.value ?? []).filter(c => new Date(c.nextReviewDate) <= now).length
 })
 
 const masteredCards = computed(() => {
-  return cardStore.cards.filter(c => c.interval >= 21).length
+  return (allCards.value ?? []).filter(c => c.interval >= 21).length
 })
 
 function getCardsByDeck(deckId: string) {
-  return cardStore.cards.filter(c => c.deckId === deckId)
+  return (allCards.value ?? []).filter(c => c.deckId === deckId)
 }
 
 function getDueByDeck(deckId: string) {
   const now = new Date()
-  return cardStore.cards.filter(c => c.deckId === deckId && new Date(c.nextReviewDate) <= now).length
+  return (allCards.value ?? []).filter(c => c.deckId === deckId && new Date(c.nextReviewDate) <= now).length
 }
 
 function getMastery(deckId: string) {
@@ -134,7 +136,7 @@ const forecast = computed(() => {
     d.setDate(d.getDate() + i)
     const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate())
     const dEnd = new Date(dStart.getTime() + 86400000)
-    const count = cardStore.cards.filter(c => {
+    const count = (allCards.value ?? []).filter(c => {
       const rv = new Date(c.nextReviewDate)
       return rv >= dStart && rv < dEnd
     }).length
@@ -145,6 +147,7 @@ const forecast = computed(() => {
 
 const maxForecast = computed(() => Math.max(...forecast.value.map(d => d.count), 1))
 </script>
+
 
 <style scoped>
 .stats-view { max-width: 900px; margin: 0 auto; }

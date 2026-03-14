@@ -11,9 +11,11 @@ marked.setOptions({
 
 // Custom renderer to add syntax highlighting to code blocks
 const renderer = new marked.Renderer()
-renderer.code = (code: string, language: string | undefined): string => {
-  const lang = language && hljs.getLanguage(language) ? language : 'plaintext'
-  const highlighted = hljs.highlight(code, { language: lang }).value
+renderer.code = function(codeOrToken: string | { text: string; lang?: string }, language?: string | undefined): string {
+  const text = typeof codeOrToken === 'string' ? codeOrToken : codeOrToken.text
+  const tokenLang = typeof codeOrToken === 'string' ? language : codeOrToken.lang
+  const lang = tokenLang && hljs.getLanguage(tokenLang) ? tokenLang : 'plaintext'
+  const highlighted = hljs.highlight(text, { language: lang }).value
   return `<pre class="hljs"><code class="language-${lang}">${highlighted}</code></pre>`
 }
 

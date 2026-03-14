@@ -21,11 +21,20 @@ import App from '@/App.vue'
 
 const app = createApp(App)
 
-const pinia = createPinia()
+async function prepareApp() {
+  if (import.meta.env.DEV) {
+    const { worker } = await import('@/test/msw/browser')
+    await worker.start({ onUnhandledRequest: 'bypass' })
+  }
+}
+
+prepareApp().then(() => {
+  const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 
-app.use(pinia)
-app.use(router)
-app.use(VueQueryPlugin)
+  app.use(pinia)
+  app.use(router)
+  app.use(VueQueryPlugin)
 
-app.mount('#app')
+  app.mount('#app')
+})

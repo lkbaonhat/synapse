@@ -76,6 +76,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 
 import { useCards, useCardMutations } from '@/composables/useCards'
+import { computeNextSRS, previewIntervals } from '@/composables/useSRS'
+import { renderCloze } from '@/utils/markdown'
 import type { Card, DifficultyRating } from '@/types'
 
 const route = useRoute()
@@ -94,44 +96,14 @@ const currentIndex = ref(0)
 const currentCard = computed<Card | null>(() => queue.value[currentIndex.value] ?? null)
 const progressPercent = computed(() => queue.value.length === 0 ? 100 : (reviewedCount.value / queue.value.length) * 100)
 
-// SM-2 algorithm implementation
-function computeNextIntervals(card: Card) {
-  const minToDay = (m: number) => `${m}m`
-  const dayStr = (d: number) => d >= 1 ? `${Math.round(d)}d` : `${Math.round(d * 24)}h`
-
-  function sm2(ef: number, interval: number, reps: number, quality: number) {
-    let newEf = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-    if (newEf < 1.3) newEf = 1.3
-
-    let newInterval: number
-    let newReps: number
-
-    if (quality < 3) {
-      newInterval = 0
-      newReps = 0
-    } else {
-      newReps = reps + 1
-      if (reps === 0) newInterval = 1
-      else if (reps === 1) newInterval = 6
-      else newInterval = Math.round(interval * newEf)
-    }
-    return { newEf, newInterval, newReps }
-  }
-
-  const qualityMap: Record<DifficultyRating, number> = { again: 0, hard: 2, good: 4, easy: 5 }
-  const results: Record<string, string> = {}
-
-  for (const rating of ['hard', 'good', 'easy'] as DifficultyRating[]) {
-    const q = qualityMap[rating]
-    const { newInterval } = sm2(card.easeFactor, card.interval, card.repetition, q)
-    results[rating] = newInterval === 0 ? minToDay(10) : dayStr(newInterval)
-  }
-  return results
-}
-
+// Preview intervals from useSRS — no duplication of SM-2 logic
 const nextIntervals = computed(() => {
-  if (!currentCard.value) return { hard: '', good: '', easy: '' }
-  return computeNextIntervals(currentCard.value)
+  if (!currentCard.value) return { again: '', hard: '', good: '', easy: '' }
+  return previewIntervals({
+    interval: currentCard.value.interval,
+    repetition: currentCard.value.repetition,
+    easeFactor: currentCard.value.easeFactor
+  })
 })
 
 function formatLabel(format: string) {
@@ -139,9 +111,7 @@ function formatLabel(format: string) {
 }
 
 function renderContent(text: string, format: string) {
-  if (format === 'cloze') {
-    return text.replace(/\{\{(.+?)\}\}/g, '<span class="cloze-blank">_____</span>')
-  }
+  if (format === 'cloze') return renderCloze(text, false)
   return text
 }
 
@@ -151,45 +121,15 @@ function reveal() {
 
 function rate(rating: DifficultyRating) {
   if (!currentCard.value) return
-
   const card = currentCard.value
-  const qualityMap: Record<DifficultyRating, number> = { again: 0, hard: 2, good: 4, easy: 5 }
-  const q = qualityMap[rating]
-
-  let newEf = card.easeFactor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-  if (newEf < 1.3) newEf = 1.3
-
-  let newInterval: number
-  let newReps: number
-
-  if (q < 3) {
-    newInterval = 0
-    newReps = 0
-  } else {
-    newReps = card.repetition + 1
-    if (card.repetition === 0) newInterval = 1
-    else if (card.repetition === 1) newInterval = 6
-    else newInterval = Math.round(card.interval * newEf)
-  }
-
-  const nextReview = new Date()
-  if (newInterval === 0) {
-    nextReview.setMinutes(nextReview.getMinutes() + 10)
-  } else {
-    nextReview.setDate(nextReview.getDate() + newInterval)
-  }
 
   if (!cramMode.value) {
-    // §7 — Update via mutation, never mutate store directly
-    cardMutations.update.mutate({
-      id: card.id,
-      payload: {
-        easeFactor: newEf,
-        interval: newInterval,
-        repetition: newReps,
-        nextReviewDate: nextReview.toISOString()
-      }
-    })
+    // §7 — compute via useSRS pure function, submit via mutation
+    const next = computeNextSRS(
+      { interval: card.interval, repetition: card.repetition, easeFactor: card.easeFactor },
+      rating
+    )
+    cardMutations.update.mutate({ id: card.id, payload: next })
   }
 
   reviewedCount.value++
@@ -215,6 +155,7 @@ onMounted(() => {
   loadDue()
 })
 </script>
+
 
 <style scoped>
 .study-view {
