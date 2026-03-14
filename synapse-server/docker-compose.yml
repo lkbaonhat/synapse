@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: synapse
-      POSTGRES_PASSWORD: synapse_password
+      POSTGRES_PASSWORD: 123456
       POSTGRES_DB: synapse_db
     ports:
       - "5432:5432"
@@ -27,7 +27,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: synapse
-      DB_PASSWORD: synapse_password
+      DB_PASSWORD: 123456
       DB_NAME: synapse_db
       DB_SSLMODE: disable
     depends_on:

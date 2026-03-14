@@ -4,6 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/synapse/server/docs" // imported for swagger docs
 	"github.com/synapse/server/internal/handler"
 	"github.com/synapse/server/internal/middleware"
 )
@@ -25,6 +28,9 @@ func Setup(
 	r.Use(middleware.CORS(allowedOrigins))
 	r.Use(middleware.Logger())
 	r.Use(middleware.ErrorHandler())
+
+	// Swagger documentation
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Health check (unauthenticated)
 	r.GET("/api/v1/health", func(c *gin.Context) {

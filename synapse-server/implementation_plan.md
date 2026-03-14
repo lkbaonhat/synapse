@@ -76,6 +76,15 @@ synapse-server/
 
 ## Implementation Phases
 
+### Test-Driven Development (TDD) Requirement
+
+All feature development globally must follow a strict Test-Driven Development (TDD) cycle:
+1. **Red**: Write a failing test for the next piece of functionality (e.g., a unit test for a pure function in `pkg/srs` or an `httptest` integration test for a new Gin handler).
+2. **Green**: Write the minimum amount of Go code necessary to make the test pass.
+3. **Refactor**: Clean up the code while ensuring the tests continue to pass, adhering to Go idioms and project architecture.
+
+Tests are not an afterthought; they are the primary driver of the implementation. For HTTP handlers, the route and expected JSON response should be tested via `httptest` before the underlying service logic is fully fleshed out.
+
 ---
 
 ### Phase 1 — Project Scaffold & Infrastructure

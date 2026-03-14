@@ -23,6 +23,14 @@ type registerRequest struct {
 
 // Register godoc
 // @Summary Register a new user
+// @Description Register a new user with email and password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body registerRequest true "Registration Info"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -44,6 +52,14 @@ type loginRequest struct {
 
 // Login godoc
 // @Summary Authenticate and receive tokens
+// @Description Login using email and password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body loginRequest true "Login Credentials"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -64,6 +80,13 @@ type refreshRequest struct {
 
 // Refresh godoc
 // @Summary Exchange refresh token for a new token pair
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body refreshRequest true "Refresh Token"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Router /auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req refreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -80,6 +103,13 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 // Logout godoc
 // @Summary Invalidate the refresh token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body refreshRequest true "Refresh Token to invalidate"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]interface{}
+// @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req refreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

@@ -55,14 +55,22 @@ func Load() (*Config, error) {
 	viper.SetDefault("ENV", "development")
 	viper.SetDefault("DB_HOST", "localhost")
 	viper.SetDefault("DB_PORT", "5432")
+	viper.SetDefault("DB_USER", "")
+	viper.SetDefault("DB_PASSWORD", "")
+	viper.SetDefault("DB_NAME", "")
 	viper.SetDefault("DB_SSLMODE", "disable")
+	viper.SetDefault("JWT_SECRET", "")
 	viper.SetDefault("JWT_ACCESS_TTL_MINUTES", 15)
 	viper.SetDefault("JWT_REFRESH_TTL_DAYS", 7)
 	viper.SetDefault("UPLOAD_DIR", "./uploads")
 	viper.SetDefault("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 
-	// Optional .env file — ignore if not present
-	_ = viper.ReadInConfig()
+	// Optional .env file — try relative to project root first
+	if err := viper.ReadInConfig(); err != nil {
+		// Fallback for when running from cmd/server
+		viper.SetConfigFile("../../.env")
+		_ = viper.ReadInConfig()
+	}
 
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
