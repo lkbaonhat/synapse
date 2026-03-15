@@ -8,6 +8,7 @@
       <div class="finished-actions">
         <RouterLink to="/app/library" class="btn btn-secondary">Back to Library</RouterLink>
         <button class="btn btn-primary" @click="startCram">Cram All Cards</button>
+        <button class="btn btn-primary bg-[var(--color-primary-light)] border-[var(--color-primary)]" @click="startQuiz">Take as Quiz</button>
       </div>
     </div>
 
@@ -22,11 +23,19 @@
           </div>
           <span class="progress-text">{{ reviewedCount }}/{{ queue.length }}</span>
         </div>
-        <div class="mode-badge">{{ cramMode ? '🔥 Cram' : '📅 Review' }}</div>
+        <div class="mode-badge">{{ quizSessionId ? '📝 Quiz' : cramMode ? '🔥 Cram' : '📅 Review' }}</div>
       </div>
 
-      <!-- Flashcard -->
-      <div class="card-area">
+      <!-- Multiple Choice -->
+      <div v-if="currentCard?.format === 'multiple_choice'" class="card-area">
+        <div class="study-card">
+          <div class="card-format-label">📝 Quiz Test</div>
+          <MultipleChoiceViewer :card="currentCard" @answer="rate" />
+        </div>
+      </div>
+
+      <!-- Flashcard / Cloze / Free Response -->
+      <div v-else class="card-area">
         <div class="study-card" :class="{ 'is-flipped': isFlipped }" @click="reveal">
           <div class="card-face card-front-face">
             <div class="card-format-label">{{ formatLabel(currentCard.format) }}</div>
@@ -41,7 +50,7 @@
 
       <!-- Rating Buttons (shown after reveal) -->
       <Transition name="slide-up">
-        <div v-if="isFlipped" class="rating-panel">
+        <div v-if="isFlipped && currentCard?.format !== 'multiple_choice'" class="rating-panel">
           <p class="rating-prompt">How well did you remember?</p>
           <div class="rating-buttons">
             <button class="rating-btn rating-again" @click="rate('again')">
@@ -73,22 +82,27 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 
 import { useCards, useCardMutations } from '@/composables/useCards'
 import { computeNextSRS, previewIntervals } from '@/composables/useSRS'
+import { useStudyMutations } from '@/composables/useStudySession'
 import { renderCloze } from '@/utils/markdown'
 import type { Card, DifficultyRating } from '@/types'
+import MultipleChoiceViewer from '@/components/card/MultipleChoiceViewer.vue'
 
 const route = useRoute()
+const router = useRouter()
 const deckId = route.params.deckId as string
 
 // §6 — Session state in local refs only, not Pinia (not shared globally)
 const { data: deckCards } = useCards(deckId)
 const cardMutations = useCardMutations(deckId)
+const studyMutations = useStudyMutations()
 
 const isFlipped = ref(false)
 const cramMode = ref(false)
+const quizSessionId = ref<string | null>(null)
 const reviewedCount = ref(0)
 const queue = ref<Card[]>([])
 const currentIndex = ref(0)
@@ -119,11 +133,22 @@ function reveal() {
   if (!isFlipped.value) isFlipped.value = true
 }
 
-function rate(rating: DifficultyRating) {
+async function rate(rating: DifficultyRating) {
   if (!currentCard.value) return
   const card = currentCard.value
 
-  if (!cramMode.value) {
+  const ratingMap: Record<DifficultyRating, number> = { again: 1, hard: 2, good: 3, easy: 4 }
+
+  if (quizSessionId.value) {
+    try {
+      await studyMutations.answerCard.mutateAsync({
+        sessionId: quizSessionId.value,
+        payload: { cardId: card.id, rating: ratingMap[rating], timeTaken: 1000 }
+      })
+    } catch (err) {
+      console.error('Failed to save answer', err)
+    }
+  } else if (!cramMode.value) {
     // §7 — compute via useSRS pure function, submit via mutation
     const next = computeNextSRS(
       { interval: card.interval, repetition: card.repetition, easeFactor: card.easeFactor },
@@ -135,6 +160,13 @@ function rate(rating: DifficultyRating) {
   reviewedCount.value++
   currentIndex.value++
   isFlipped.value = false
+
+  if (currentIndex.value >= queue.value.length) {
+    if (quizSessionId.value) {
+      await studyMutations.endSession.mutateAsync(quizSessionId.value)
+      router.push(`/app/decks/${deckId}/quiz-results/${quizSessionId.value}`)
+    }
+  }
 }
 
 function loadDue() {
@@ -145,10 +177,24 @@ function loadDue() {
 }
 
 function startCram() {
+  quizSessionId.value = null
   cramMode.value = true
   queue.value = [...(deckCards.value ?? [])]
   currentIndex.value = 0
   reviewedCount.value = 0
+}
+
+async function startQuiz() {
+  try {
+    const res = await studyMutations.startSession.mutateAsync({ deckId, mode: 'quiz' })
+    quizSessionId.value = res.session.id
+    cramMode.value = false
+    queue.value = res.cards
+    currentIndex.value = 0
+    reviewedCount.value = 0
+  } catch (err) {
+    console.error('Failed to start quiz session', err)
+  }
 }
 
 onMounted(() => {

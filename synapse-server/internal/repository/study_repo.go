@@ -16,6 +16,7 @@ type StudyRepository interface {
 	FindSession(ctx context.Context, id, userID uuid.UUID) (*domain.StudySession, error)
 	EndSession(ctx context.Context, id uuid.UUID, endedAt time.Time) error
 	CreateLog(ctx context.Context, log *domain.StudyLog) error
+	FindLogsBySession(ctx context.Context, sessionID uuid.UUID) ([]domain.StudyLog, error)
 	// Stats queries
 	DailyActivity(ctx context.Context, userID uuid.UUID, days int) ([]domain.DailyActivity, error)
 	TotalStudied(ctx context.Context, userID uuid.UUID) (int64, error)
@@ -47,6 +48,12 @@ func (r *studyRepo) EndSession(ctx context.Context, id uuid.UUID, endedAt time.T
 
 func (r *studyRepo) CreateLog(ctx context.Context, log *domain.StudyLog) error {
 	return r.db.WithContext(ctx).Create(log).Error
+}
+
+func (r *studyRepo) FindLogsBySession(ctx context.Context, sessionID uuid.UUID) ([]domain.StudyLog, error) {
+	var logs []domain.StudyLog
+	err := r.db.WithContext(ctx).Where("session_id = ?", sessionID).Find(&logs).Error
+	return logs, err
 }
 
 func (r *studyRepo) DailyActivity(ctx context.Context, userID uuid.UUID, days int) ([]domain.DailyActivity, error) {

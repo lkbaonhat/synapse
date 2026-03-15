@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,6 +20,7 @@ type StudyService interface {
 	NextCards(ctx context.Context, sessionID, userID uuid.UUID) ([]domain.Card, error)
 	Answer(ctx context.Context, sessionID, userID, cardID uuid.UUID, rating int, timeTaken int) error
 	EndSession(ctx context.Context, sessionID, userID uuid.UUID) error
+	GetQuizResult(ctx context.Context, sessionID, userID uuid.UUID) (*domain.QuizResult, error)
 }
 
 type studyService struct {
@@ -143,4 +145,86 @@ func (s *studyService) fetchCards(ctx context.Context, deckID uuid.UUID, mode do
 	default:
 		return nil, apierror.BadRequest("unknown study mode: " + string(mode))
 	}
+}
+
+func (s *studyService) GetQuizResult(ctx context.Context, sessionID, userID uuid.UUID) (*domain.QuizResult, error) {
+	session, err := s.studyRepo.FindSession(ctx, sessionID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if session == nil {
+		return nil, apierror.NotFound("session not found")
+	}
+
+	logs, err := s.studyRepo.FindLogsBySession(ctx, sessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &domain.QuizResult{
+		TotalCorrect: 0,
+		TotalWrong:   0,
+		WrongAnswers: make([]domain.WrongAnswerSummary, 0),
+	}
+
+	for _, log := range logs {
+		if log.Rating >= 3 {
+			result.TotalCorrect++
+		} else {
+			result.TotalWrong++
+			card, err := s.cardRepo.FindByID(ctx, log.CardID)
+			if err != nil || card == nil {
+				continue
+			}
+
+			var content map[string]interface{}
+			_ = json.Unmarshal(card.Content, &content)
+
+			front := ""
+			back := ""
+
+			switch card.Type {
+			case domain.CardTypeFlashcard:
+				if f, ok := content["front"].(string); ok {
+					front = f
+				}
+				if b, ok := content["back"].(string); ok {
+					back = b
+				}
+			case domain.CardTypeCloze:
+				if t, ok := content["text"].(string); ok {
+					front = t
+				}
+			case domain.CardTypeFreeResponse:
+				if p, ok := content["prompt"].(string); ok {
+					front = p
+				}
+				if a, ok := content["answer"].(string); ok {
+					back = a
+				}
+			case domain.CardTypeMultipleChoice:
+				if p, ok := content["prompt"].(string); ok {
+					front = p
+				}
+				if opts, ok := content["options"].([]interface{}); ok {
+					if idxFloat, ok := content["correctIndex"].(float64); ok {
+						idx := int(idxFloat)
+						if idx >= 0 && idx < len(opts) {
+							if optStr, ok := opts[idx].(string); ok {
+								back = optStr
+							}
+						}
+					}
+				}
+			}
+
+			result.WrongAnswers = append(result.WrongAnswers, domain.WrongAnswerSummary{
+				CardID:      card.ID,
+				Front:       front,
+				CorrectBack: back,
+			})
+		}
+	}
+
+	return result, nil
 }

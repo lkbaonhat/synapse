@@ -1,6 +1,255 @@
 basePath: /api/v1
 definitions:
-  handler.loginRequest:
+  github_com_synapse_server_internal_domain.Card:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      deckID:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      dueAt:
+        description: nil → card not yet studied (new)
+        type: string
+      easiness:
+        description: SM-2 E-factor (default 2.5)
+        format: float64
+        type: number
+      id:
+        type: string
+      interval:
+        description: SRS scheduling fields (initialised on first study)
+        type: integer
+      repetitions:
+        description: total successful reviews
+        type: integer
+      tags:
+        items:
+          $ref: '#/definitions/github_com_synapse_server_internal_domain.Tag'
+        type: array
+      type:
+        $ref: '#/definitions/github_com_synapse_server_internal_domain.CardType'
+      updatedAt:
+        type: string
+    type: object
+  github_com_synapse_server_internal_domain.CardType:
+    enum:
+    - flashcard
+    - cloze
+    - free_response
+    - multiple_choice
+    type: string
+    x-enum-varnames:
+    - CardTypeFlashcard
+    - CardTypeCloze
+    - CardTypeFreeResponse
+    - CardTypeMultipleChoice
+  github_com_synapse_server_internal_domain.DailyActivity:
+    description: A data-point representing learning activity for a specific day
+    properties:
+      count:
+        description: cards reviewed that day
+        type: integer
+      date:
+        description: '"YYYY-MM-DD"'
+        type: string
+    type: object
+  github_com_synapse_server_internal_domain.Deck:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      description:
+        type: string
+      folderID:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/github_com_synapse_server_internal_domain.Tag'
+        type: array
+      updatedAt:
+        type: string
+      userID:
+        type: string
+    type: object
+  github_com_synapse_server_internal_domain.DeckStats:
+    description: Breakdown of card mastery tiers for a specific deck
+    properties:
+      deckId:
+        type: string
+      learning:
+        type: integer
+      mastered:
+        type: integer
+      new:
+        type: integer
+      review:
+        type: integer
+    type: object
+  github_com_synapse_server_internal_domain.Folder:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      name:
+        type: string
+      parentID:
+        type: string
+      updatedAt:
+        type: string
+      userID:
+        type: string
+    type: object
+  github_com_synapse_server_internal_domain.ForecastDay:
+    description: Projected review workload for a future date
+    properties:
+      count:
+        type: integer
+      date:
+        type: string
+    type: object
+  github_com_synapse_server_internal_domain.QuizResult:
+    properties:
+      totalCorrect:
+        type: integer
+      totalWrong:
+        type: integer
+      wrongAnswers:
+        items:
+          $ref: '#/definitions/github_com_synapse_server_internal_domain.WrongAnswerSummary'
+        type: array
+    type: object
+  github_com_synapse_server_internal_domain.StatsOverview:
+    description: Overall statistics for a user's library and study patterns
+    properties:
+      currentStreak:
+        description: calendar days
+        type: integer
+      retentionRate:
+        description: percentage
+        type: number
+      totalCards:
+        type: integer
+      totalStudied:
+        type: integer
+    type: object
+  github_com_synapse_server_internal_domain.StudyMode:
+    enum:
+    - learn
+    - review
+    - cram
+    - quiz
+    type: string
+    x-enum-varnames:
+    - StudyModeLearn
+    - StudyModeReview
+    - StudyModeCram
+    - StudyModeQuiz
+  github_com_synapse_server_internal_domain.Tag:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+      userID:
+        type: string
+    type: object
+  github_com_synapse_server_internal_domain.WrongAnswerSummary:
+    properties:
+      cardId:
+        type: string
+      correctBack:
+        type: string
+      front:
+        type: string
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  internal_handler.answerRequest:
+    properties:
+      cardId:
+        type: string
+      rating:
+        maximum: 4
+        minimum: 1
+        type: integer
+      timeTaken:
+        minimum: 0
+        type: integer
+    required:
+    - cardId
+    - rating
+    - timeTaken
+    type: object
+  internal_handler.attachTagsRequest:
+    properties:
+      tagIds:
+        items:
+          type: string
+        type: array
+    required:
+    - tagIds
+    type: object
+  internal_handler.createCardRequest:
+    properties:
+      content:
+        type: string
+      type:
+        $ref: '#/definitions/github_com_synapse_server_internal_domain.CardType'
+    required:
+    - content
+    - type
+    type: object
+  internal_handler.createDeckRequest:
+    properties:
+      description:
+        type: string
+      folderId:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  internal_handler.createFolderRequest:
+    properties:
+      name:
+        type: string
+      parentId:
+        type: string
+    required:
+    - name
+    type: object
+  internal_handler.createTagRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  internal_handler.loginRequest:
     properties:
       email:
         type: string
@@ -10,14 +259,14 @@ definitions:
     - email
     - password
     type: object
-  handler.refreshRequest:
+  internal_handler.refreshRequest:
     properties:
       refreshToken:
         type: string
     required:
     - refreshToken
     type: object
-  handler.registerRequest:
+  internal_handler.registerRequest:
     properties:
       email:
         type: string
@@ -27,6 +276,23 @@ definitions:
     required:
     - email
     - password
+    type: object
+  internal_handler.startSessionRequest:
+    properties:
+      deckId:
+        type: string
+      mode:
+        $ref: '#/definitions/github_com_synapse_server_internal_domain.StudyMode'
+    required:
+    - deckId
+    - mode
+    type: object
+  internal_handler.updateFolderRequest:
+    properties:
+      name:
+        type: string
+      parentId:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -53,7 +319,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.loginRequest'
+          $ref: '#/definitions/internal_handler.loginRequest'
       produces:
       - application/json
       responses:
@@ -80,7 +346,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.refreshRequest'
+          $ref: '#/definitions/internal_handler.refreshRequest'
       produces:
       - application/json
       responses:
@@ -104,7 +370,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.refreshRequest'
+          $ref: '#/definitions/internal_handler.refreshRequest'
       produces:
       - application/json
       responses:
@@ -132,7 +398,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.registerRequest'
+          $ref: '#/definitions/internal_handler.registerRequest'
       produces:
       - application/json
       responses:
@@ -149,4 +415,1343 @@ paths:
       summary: Register a new user
       tags:
       - Auth
+  /cards/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific card
+      parameters:
+      - description: Card ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a card
+      tags:
+      - Cards
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific card
+      parameters:
+      - description: Card ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Card'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a card by ID
+      tags:
+      - Cards
+    put:
+      consumes:
+      - application/json
+      description: Update a card's information
+      parameters:
+      - description: Card ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Card Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_synapse_server_internal_domain.Card'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Card'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a card
+      tags:
+      - Cards
+  /cards/{id}/media:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload an attachment for a card
+      parameters:
+      - description: Card ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Media File
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload media for a card
+      tags:
+      - Cards
+  /decks:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of decks for the authenticated user, optionally
+        filtered by folder or tag
+      parameters:
+      - description: Filter by Folder ID
+        in: query
+        name: folderId
+        type: string
+      - description: Filter by Tag ID
+        in: query
+        name: tagId
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_synapse_server_internal_domain.Deck'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all decks
+      tags:
+      - Decks
+    post:
+      consumes:
+      - application/json
+      description: Create a new deck with a name, optional description, and optional
+        folder ID
+      parameters:
+      - description: Deck Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.createDeckRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Deck'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new deck
+      tags:
+      - Decks
+  /decks/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific deck
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a deck
+      tags:
+      - Decks
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific deck
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Deck'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a deck by ID
+      tags:
+      - Decks
+    put:
+      consumes:
+      - application/json
+      description: Update a deck's information
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Deck Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_synapse_server_internal_domain.Deck'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Deck'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a deck
+      tags:
+      - Decks
+  /decks/{id}/cards:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of cards for a specific deck
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_synapse_server_internal_domain.Card'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List cards for a deck
+      tags:
+      - Cards
+    post:
+      consumes:
+      - application/json
+      description: Create a new card in a specific deck
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Card Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.createCardRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Card'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new card
+      tags:
+      - Cards
+  /decks/{id}/cards/due:
+    get:
+      consumes:
+      - application/json
+      description: Get the number of cards currently due for review in a specific
+        deck
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get due count for a deck
+      tags:
+      - Cards
+  /decks/{id}/export:
+    get:
+      consumes:
+      - application/json
+      description: Download a deck's cards as a CSV file
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: deck_export.csv
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Export deck to CSV
+      tags:
+      - Import/Export
+  /decks/{id}/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Import flashcards into a specific deck from a CSV file
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 'CSV File (format: front,back)'
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Import cards from CSV
+      tags:
+      - Import/Export
+  /decks/{id}/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get learning statistics for a specific deck
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.DeckStats'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get deck statistics
+      tags:
+      - Stats
+  /decks/{id}/tags:
+    post:
+      consumes:
+      - application/json
+      description: Attach one or more tags to a specific deck
+      parameters:
+      - description: Deck ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.attachTagsRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Attach tags to a deck
+      tags:
+      - Decks
+  /export:
+    get:
+      consumes:
+      - application/json
+      description: Download all folders, decks, cards, and study logs for the authenticated
+        user as a JSON file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: synapse_export.json
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Export all user data to JSON
+      tags:
+      - Import/Export
+  /folders:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all folders for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_synapse_server_internal_domain.Folder'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all folders
+      tags:
+      - Folders
+    post:
+      consumes:
+      - application/json
+      description: Create a new folder with an optional parent folder ID
+      parameters:
+      - description: Folder Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.createFolderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Folder'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new folder
+      tags:
+      - Folders
+  /folders/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific folder
+      parameters:
+      - description: Folder ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a folder
+      tags:
+      - Folders
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific folder
+      parameters:
+      - description: Folder ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Folder'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get a folder by ID
+      tags:
+      - Folders
+    put:
+      consumes:
+      - application/json
+      description: Update a folder's name or parent directory
+      parameters:
+      - description: Folder ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Folder Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.updateFolderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Folder'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update a folder
+      tags:
+      - Folders
+  /stats/activity:
+    get:
+      consumes:
+      - application/json
+      description: Get the learning activity over a specified number of days
+      parameters:
+      - default: 30
+        description: Number of days
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_synapse_server_internal_domain.DailyActivity'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get learning activity
+      tags:
+      - Stats
+  /stats/forecast:
+    get:
+      consumes:
+      - application/json
+      description: Get a forecast of upcoming reviews for the next few days
+      parameters:
+      - default: 7
+        description: Number of days
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_synapse_server_internal_domain.ForecastDay'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get review forecast
+      tags:
+      - Stats
+  /stats/overview:
+    get:
+      consumes:
+      - application/json
+      description: Get overall learning statistics for the current user
+      parameters:
+      - description: Total cards in library
+        in: query
+        name: totalCards
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.StatsOverview'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get learning overview stats
+      tags:
+      - Stats
+  /study/sessions:
+    post:
+      consumes:
+      - application/json
+      description: Start a new study session for a deck in a specific mode (review,
+        cram, quiz)
+      parameters:
+      - description: Session Parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.startSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Start a study session
+      tags:
+      - Study
+  /study/sessions/{id}/answer:
+    post:
+      consumes:
+      - application/json
+      description: Submit an answer rating for a card in an active study session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Answer Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.answerRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Submit an answer
+      tags:
+      - Study
+  /study/sessions/{id}/cards/next:
+    get:
+      consumes:
+      - application/json
+      description: Fetch the next batch of due cards for an active session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_synapse_server_internal_domain.Card'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get next due cards for session
+      tags:
+      - Study
+  /study/sessions/{id}/end:
+    post:
+      consumes:
+      - application/json
+      description: End an active study session and save progress
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: End a study session
+      tags:
+      - Study
+  /study/sessions/{id}/results:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the scorecard and wrong answer details for a completed
+        quiz session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.QuizResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get quiz results
+      tags:
+      - Study
+  /tags:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all tags for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_synapse_server_internal_domain.Tag'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all tags
+      tags:
+      - Tags
+    post:
+      consumes:
+      - application/json
+      description: Create a new tag for organizing decks
+      parameters:
+      - description: Tag Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.createTagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_synapse_server_internal_domain.Tag'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new tag
+      tags:
+      - Tags
+  /tags/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific tag
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a tag
+      tags:
+      - Tags
 swagger: "2.0"

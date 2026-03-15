@@ -20,6 +20,17 @@ func NewDeckHandler(svc service.DeckService) *DeckHandler { return &DeckHandler{
 
 // ----- Folders -----
 
+// ListFolders godoc
+// @Summary List all folders
+// @Description Get a list of all folders for the authenticated user
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} domain.Folder
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /folders [get]
 func (h *DeckHandler) ListFolders(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	folders, err := h.svc.ListFolders(c.Request.Context(), userID)
@@ -30,12 +41,27 @@ func (h *DeckHandler) ListFolders(c *gin.Context) {
 	c.JSON(http.StatusOK, folders)
 }
 
+type createFolderRequest struct {
+	Name     string     `json:"name"     binding:"required"`
+	ParentID *uuid.UUID `json:"parentId"`
+}
+
+// CreateFolder godoc
+// @Summary Create a new folder
+// @Description Create a new folder with an optional parent folder ID
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body createFolderRequest true "Folder Information"
+// @Success 201 {object} domain.Folder
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /folders [post]
 func (h *DeckHandler) CreateFolder(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	var body struct {
-		Name     string     `json:"name"     binding:"required"`
-		ParentID *uuid.UUID `json:"parentId"`
-	}
+	var body createFolderRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -48,6 +74,20 @@ func (h *DeckHandler) CreateFolder(c *gin.Context) {
 	c.JSON(http.StatusCreated, folder)
 }
 
+// GetFolder godoc
+// @Summary Get a folder by ID
+// @Description Get details of a specific folder
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Folder ID"
+// @Success 200 {object} domain.Folder
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /folders/{id} [get]
 func (h *DeckHandler) GetFolder(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -63,6 +103,26 @@ func (h *DeckHandler) GetFolder(c *gin.Context) {
 	c.JSON(http.StatusOK, f)
 }
 
+type updateFolderRequest struct {
+	Name     string     `json:"name"`
+	ParentID *uuid.UUID `json:"parentId"`
+}
+
+// UpdateFolder godoc
+// @Summary Update a folder
+// @Description Update a folder's name or parent directory
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Folder ID"
+// @Param request body updateFolderRequest true "Folder Information"
+// @Success 200 {object} domain.Folder
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /folders/{id} [put]
 func (h *DeckHandler) UpdateFolder(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -70,10 +130,7 @@ func (h *DeckHandler) UpdateFolder(c *gin.Context) {
 		return
 	}
 	userID := middleware.GetUserID(c)
-	var body struct {
-		Name     string     `json:"name"`
-		ParentID *uuid.UUID `json:"parentId"`
-	}
+	var body updateFolderRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -86,6 +143,20 @@ func (h *DeckHandler) UpdateFolder(c *gin.Context) {
 	c.JSON(http.StatusOK, f)
 }
 
+// DeleteFolder godoc
+// @Summary Delete a folder
+// @Description Delete a specific folder
+// @Tags Folders
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Folder ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /folders/{id} [delete]
 func (h *DeckHandler) DeleteFolder(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -102,6 +173,21 @@ func (h *DeckHandler) DeleteFolder(c *gin.Context) {
 
 // ----- Decks -----
 
+// ListDecks godoc
+// @Summary List all decks
+// @Description Get a paginated list of decks for the authenticated user, optionally filtered by folder or tag
+// @Tags Decks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param folderId query string false "Filter by Folder ID"
+// @Param tagId query string false "Filter by Tag ID"
+// @Param page query int false "Page number"
+// @Param limit query int false "Items per page"
+// @Success 200 {array} domain.Deck
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks [get]
 func (h *DeckHandler) ListDecks(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	var folderID, tagID *uuid.UUID
@@ -124,13 +210,28 @@ func (h *DeckHandler) ListDecks(c *gin.Context) {
 	c.JSON(http.StatusOK, decks)
 }
 
+type createDeckRequest struct {
+	Name        string     `json:"name"        binding:"required"`
+	Description string     `json:"description"`
+	FolderID    *uuid.UUID `json:"folderId"`
+}
+
+// CreateDeck godoc
+// @Summary Create a new deck
+// @Description Create a new deck with a name, optional description, and optional folder ID
+// @Tags Decks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body createDeckRequest true "Deck Information"
+// @Success 201 {object} domain.Deck
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks [post]
 func (h *DeckHandler) CreateDeck(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	var body struct {
-		Name        string     `json:"name"        binding:"required"`
-		Description string     `json:"description"`
-		FolderID    *uuid.UUID `json:"folderId"`
-	}
+	var body createDeckRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -146,6 +247,20 @@ func (h *DeckHandler) CreateDeck(c *gin.Context) {
 	c.JSON(http.StatusCreated, deck)
 }
 
+// GetDeck godoc
+// @Summary Get a deck by ID
+// @Description Get details of a specific deck
+// @Tags Decks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Success 200 {object} domain.Deck
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id} [get]
 func (h *DeckHandler) GetDeck(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -160,6 +275,21 @@ func (h *DeckHandler) GetDeck(c *gin.Context) {
 	c.JSON(http.StatusOK, d)
 }
 
+// UpdateDeck godoc
+// @Summary Update a deck
+// @Description Update a deck's information
+// @Tags Decks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Param request body domain.Deck true "Deck Information"
+// @Success 200 {object} domain.Deck
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id} [put]
 func (h *DeckHandler) UpdateDeck(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -179,6 +309,20 @@ func (h *DeckHandler) UpdateDeck(c *gin.Context) {
 	c.JSON(http.StatusOK, d)
 }
 
+// DeleteDeck godoc
+// @Summary Delete a deck
+// @Description Delete a specific deck
+// @Tags Decks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id} [delete]
 func (h *DeckHandler) DeleteDeck(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -192,15 +336,32 @@ func (h *DeckHandler) DeleteDeck(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+type attachTagsRequest struct {
+	TagIDs []uuid.UUID `json:"tagIds" binding:"required"`
+}
+
+// AttachTags godoc
+// @Summary Attach tags to a deck
+// @Description Attach one or more tags to a specific deck
+// @Tags Decks
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Param request body attachTagsRequest true "Tag IDs"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id}/tags [post]
 func (h *DeckHandler) AttachTags(c *gin.Context) {
 	deckID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid deck id"})
 		return
 	}
-	var body struct {
-		TagIDs []uuid.UUID `json:"tagIds" binding:"required"`
-	}
+	var body attachTagsRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -214,6 +375,17 @@ func (h *DeckHandler) AttachTags(c *gin.Context) {
 
 // ----- Tags -----
 
+// ListTags godoc
+// @Summary List all tags
+// @Description Get a list of all tags for the authenticated user
+// @Tags Tags
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} domain.Tag
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /tags [get]
 func (h *DeckHandler) ListTags(c *gin.Context) {
 	tags, err := h.svc.ListTags(c.Request.Context(), middleware.GetUserID(c))
 	if err != nil {
@@ -223,11 +395,26 @@ func (h *DeckHandler) ListTags(c *gin.Context) {
 	c.JSON(http.StatusOK, tags)
 }
 
+type createTagRequest struct {
+	Name string `json:"name" binding:"required"`
+}
+
+// CreateTag godoc
+// @Summary Create a new tag
+// @Description Create a new tag for organizing decks
+// @Tags Tags
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body createTagRequest true "Tag Information"
+// @Success 201 {object} domain.Tag
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /tags [post]
 func (h *DeckHandler) CreateTag(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	var body struct {
-		Name string `json:"name" binding:"required"`
-	}
+	var body createTagRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -240,6 +427,20 @@ func (h *DeckHandler) CreateTag(c *gin.Context) {
 	c.JSON(http.StatusCreated, tag)
 }
 
+// DeleteTag godoc
+// @Summary Delete a tag
+// @Description Delete a specific tag
+// @Tags Tags
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Tag ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /tags/{id} [delete]
 func (h *DeckHandler) DeleteTag(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

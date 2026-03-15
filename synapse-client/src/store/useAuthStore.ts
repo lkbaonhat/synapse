@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import type { AxiosError } from 'axios'
 
 import { authService } from '@/services/authService'

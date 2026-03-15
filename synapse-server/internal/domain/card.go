@@ -12,9 +12,10 @@ import (
 type CardType string
 
 const (
-	CardTypeFlashcard    CardType = "flashcard"
-	CardTypeCloze        CardType = "cloze"
-	CardTypeFreeResponse CardType = "free_response"
+	CardTypeFlashcard      CardType = "flashcard"
+	CardTypeCloze          CardType = "cloze"
+	CardTypeFreeResponse   CardType = "free_response"
+	CardTypeMultipleChoice CardType = "multiple_choice"
 )
 
 // Card is a single learnable item belonging to a Deck.

@@ -18,7 +18,8 @@ const label = computed(() => {
   const map: Record<QuestionFormat, string> = {
     flashcard: '🃏 Flashcard',
     cloze: '✏️ Cloze',
-    free_response: '💬 Free Response'
+    free_response: '💬 Free Response',
+    multiple_choice: '📝 Quiz'
   }
   return map[props.format]
 })
@@ -27,7 +28,8 @@ const variantClass = computed(() => {
   const map: Record<QuestionFormat, string> = {
     flashcard: 'badge--flashcard',
     cloze: 'badge--cloze',
-    free_response: 'badge--free-response'
+    free_response: 'badge--free-response',
+    multiple_choice: 'badge--multiple-choice'
   }
   return map[props.format]
 })
@@ -49,4 +51,5 @@ const variantClass = computed(() => {
 .badge--flashcard    { background: rgba(99,102,241,0.1); color: var(--color-primary); }
 .badge--cloze        { background: rgba(245,158,11,0.1); color: #f59e0b; }
 .badge--free-response { background: rgba(34,197,94,0.1); color: #22c55e; }
+.badge--multiple-choice { background: rgba(236,72,153,0.1); color: #ec4899; }
 </style>

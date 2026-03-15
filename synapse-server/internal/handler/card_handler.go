@@ -24,6 +24,21 @@ func NewCardHandler(cardSvc service.CardService, studySvc service.StudyService, 
 	return &CardHandler{cardSvc: cardSvc, studySvc: studySvc, uploadDir: uploadDir}
 }
 
+// ListCards godoc
+// @Summary List cards for a deck
+// @Description Get a paginated list of cards for a specific deck
+// @Tags Cards
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Param page query int false "Page number"
+// @Param limit query int false "Items per page"
+// @Success 200 {array} domain.Card
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id}/cards [get]
 func (h *CardHandler) ListCards(c *gin.Context) {
 	deckID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -40,16 +55,32 @@ func (h *CardHandler) ListCards(c *gin.Context) {
 	c.JSON(http.StatusOK, cards)
 }
 
+type createCardRequest struct {
+	Type    domain.CardType `json:"type"    binding:"required"`
+	Content domain.RawJSON  `json:"content" binding:"required"`
+}
+
+// CreateCard godoc
+// @Summary Create a new card
+// @Description Create a new card in a specific deck
+// @Tags Cards
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Param request body createCardRequest true "Card Information"
+// @Success 201 {object} domain.Card
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id}/cards [post]
 func (h *CardHandler) CreateCard(c *gin.Context) {
 	deckID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid deck id"})
 		return
 	}
-	var body struct {
-		Type    domain.CardType `json:"type"    binding:"required"`
-		Content domain.RawJSON  `json:"content" binding:"required"`
-	}
+	var body createCardRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -62,6 +93,20 @@ func (h *CardHandler) CreateCard(c *gin.Context) {
 	c.JSON(http.StatusCreated, card)
 }
 
+// GetCard godoc
+// @Summary Get a card by ID
+// @Description Get details of a specific card
+// @Tags Cards
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Card ID"
+// @Success 200 {object} domain.Card
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /cards/{id} [get]
 func (h *CardHandler) GetCard(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -76,6 +121,21 @@ func (h *CardHandler) GetCard(c *gin.Context) {
 	c.JSON(http.StatusOK, card)
 }
 
+// UpdateCard godoc
+// @Summary Update a card
+// @Description Update a card's information
+// @Tags Cards
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Card ID"
+// @Param request body domain.Card true "Card Information"
+// @Success 200 {object} domain.Card
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /cards/{id} [put]
 func (h *CardHandler) UpdateCard(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -95,6 +155,20 @@ func (h *CardHandler) UpdateCard(c *gin.Context) {
 	c.JSON(http.StatusOK, card)
 }
 
+// DeleteCard godoc
+// @Summary Delete a card
+// @Description Delete a specific card
+// @Tags Cards
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Card ID"
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /cards/{id} [delete]
 func (h *CardHandler) DeleteCard(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -108,6 +182,19 @@ func (h *CardHandler) DeleteCard(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// DueCount godoc
+// @Summary Get due count for a deck
+// @Description Get the number of cards currently due for review in a specific deck
+// @Tags Cards
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id}/cards/due [get]
 func (h *CardHandler) DueCount(c *gin.Context) {
 	deckID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -122,7 +209,20 @@ func (h *CardHandler) DueCount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"count": count})
 }
 
-// UploadMedia saves an attachment for a card.
+// UploadMedia godoc
+// @Summary Upload media for a card
+// @Description Upload an attachment for a card
+// @Tags Cards
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Card ID"
+// @Param file formData file true "Media File"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /cards/{id}/media [post]
 func (h *CardHandler) UploadMedia(c *gin.Context) {
 	cardID, err := uuid.Parse(c.Param("id"))
 	if err != nil {

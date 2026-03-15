@@ -18,6 +18,20 @@ func NewImportExportHandler(ieSvc service.ImportExportService) *ImportExportHand
 	return &ImportExportHandler{ieSvc: ieSvc}
 }
 
+// ImportCSV godoc
+// @Summary Import cards from CSV
+// @Description Import flashcards into a specific deck from a CSV file
+// @Tags Import/Export
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Param file formData file true "CSV File (format: front,back)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id}/import [post]
 func (h *ImportExportHandler) ImportCSV(c *gin.Context) {
 	deckID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -39,6 +53,19 @@ func (h *ImportExportHandler) ImportCSV(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// ExportDeckCSV godoc
+// @Summary Export deck to CSV
+// @Description Download a deck's cards as a CSV file
+// @Tags Import/Export
+// @Accept json
+// @Produce text/csv
+// @Security BearerAuth
+// @Param id path string true "Deck ID"
+// @Success 200 {file} file "deck_export.csv"
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /decks/{id}/export [get]
 func (h *ImportExportHandler) ExportDeckCSV(c *gin.Context) {
 	deckID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -52,6 +79,17 @@ func (h *ImportExportHandler) ExportDeckCSV(c *gin.Context) {
 	}
 }
 
+// ExportUserJSON godoc
+// @Summary Export all user data to JSON
+// @Description Download all folders, decks, cards, and study logs for the authenticated user as a JSON file
+// @Tags Import/Export
+// @Accept json
+// @Produce application/json
+// @Security BearerAuth
+// @Success 200 {file} file "synapse_export.json"
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /export [get]
 func (h *ImportExportHandler) ExportUserJSON(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	c.Header("Content-Disposition", "attachment; filename=synapse_export.json")

@@ -5,7 +5,7 @@
  * Run: pnpm test src/composables/__tests__/useDecks.test.ts
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { defineComponent, h, Suspense, ref } from 'vue'
+import { defineComponent } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
 import { createPinia } from 'pinia'
@@ -75,8 +75,8 @@ describe('useDecks', () => {
     // Items from the MSW handler should be rendered
     const items = wrapper.findAll('.deck-item')
     expect(items.length).toBe(2)
-    expect(items[0].text()).toBe('JavaScript')
-    expect(items[1].text()).toBe('TypeScript')
+    expect(items[0]!.text()).toBe('JavaScript')
+    expect(items[1]!.text()).toBe('TypeScript')
   })
 
   it('handles API errors gracefully', async () => {

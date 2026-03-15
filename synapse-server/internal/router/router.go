@@ -90,6 +90,7 @@ func Setup(
 		v1.GET("/study/sessions/:id/next", studyH.NextCards)
 		v1.POST("/study/sessions/:id/answer", studyH.Answer)
 		v1.POST("/study/sessions/:id/end", studyH.EndSession)
+		v1.GET("/study/sessions/:id/results", studyH.GetQuizResult)
 
 		// Statistics
 		v1.GET("/stats/overview", statsH.Overview)

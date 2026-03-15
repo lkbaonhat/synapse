@@ -47,7 +47,7 @@ export interface Tag {
   color?: string
 }
 
-export type QuestionFormat = 'flashcard' | 'cloze' | 'free_response'
+export type QuestionFormat = 'flashcard' | 'cloze' | 'free_response' | 'multiple_choice'
 
 export interface Card {
   id: string
@@ -87,4 +87,16 @@ export interface Folder {
   parentId?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface WrongAnswerSummary {
+  cardId: string
+  front: string
+  correctBack: string
+}
+
+export interface QuizResult {
+  totalCorrect: number
+  totalWrong: number
+  wrongAnswers: WrongAnswerSummary[]
 }

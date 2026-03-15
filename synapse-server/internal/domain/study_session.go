@@ -13,6 +13,7 @@ const (
 	StudyModeLearn  StudyMode = "learn"
 	StudyModeReview StudyMode = "review"
 	StudyModeCram   StudyMode = "cram"
+	StudyModeQuiz   StudyMode = "quiz"
 )
 
 // StudySession tracks a single study interaction with a deck.
@@ -33,4 +34,18 @@ type StudyLog struct {
 	Rating    int       `gorm:"not null"` // 1=Again 2=Hard 3=Good 4=Easy
 	TimeTaken int       `gorm:"not null"` // milliseconds
 	LoggedAt  time.Time `gorm:"not null"`
+}
+
+// QuizResult summarizes a quiz session.
+type QuizResult struct {
+	TotalCorrect int                  `json:"totalCorrect"`
+	TotalWrong   int                  `json:"totalWrong"`
+	WrongAnswers []WrongAnswerSummary `json:"wrongAnswers"`
+}
+
+// WrongAnswerSummary represents a single missed question and its correct answer/context.
+type WrongAnswerSummary struct {
+	CardID      uuid.UUID `json:"cardId"`
+	Front       string    `json:"front"`
+	CorrectBack string    `json:"correctBack"`
 }

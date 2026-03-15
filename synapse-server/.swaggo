@@ -1,0 +1,2 @@
+replace gorm.io/datatypes.JSON string
+replace domain.RawJSON string

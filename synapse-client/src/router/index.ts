@@ -59,6 +59,12 @@ const router = createRouter({
           meta: { title: 'Study — Synapse' }
         },
         {
+          path: 'decks/:deckId/quiz-results/:sessionId',
+          name: 'QuizResult',
+          component: () => import('@/views/QuizResultView.vue'),
+          meta: { title: 'Quiz Result — Synapse' }
+        },
+        {
           path: 'stats',
           name: 'Stats',
           component: () => import('@/views/StatsView.vue'),
